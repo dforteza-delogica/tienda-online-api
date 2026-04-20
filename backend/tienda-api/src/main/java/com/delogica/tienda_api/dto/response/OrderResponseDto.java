@@ -1,5 +1,6 @@
 package com.delogica.tienda_api.dto.response;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -20,7 +21,7 @@ public class OrderResponseDto
     private Long            shippingAddressId;
     private LocalDateTime   orderDate;
     private OrderStatus     status;
-    private Double          total;
+    private BigDecimal      total;
 
     private List<OrderItemResponseDto> items;
 }

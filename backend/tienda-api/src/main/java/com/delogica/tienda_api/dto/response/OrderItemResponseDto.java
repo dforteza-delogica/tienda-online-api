@@ -1,5 +1,7 @@
 package com.delogica.tienda_api.dto.response;
 
+import java.math.BigDecimal;
+
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -12,5 +14,5 @@ public class OrderItemResponseDto
 {
     private Long    productoId;
     private Integer quantity;
-    private Double  unitPrice;
+    private BigDecimal  unitPrice;
 }
