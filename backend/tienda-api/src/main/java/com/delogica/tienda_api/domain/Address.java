@@ -37,5 +37,5 @@ public class Address
 
     private String country;
 
-    private Boolean isDefault;
+    private Boolean isDefault = false;
 }
