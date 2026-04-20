@@ -13,7 +13,8 @@ import lombok.Setter;
 @Entity
 @Table(name = "customers")
 @Getter @Setter 
-@NoArgsConstructor @AllArgsConstructor
+@NoArgsConstructor
+@AllArgsConstructor
 public class Customer {
 
     @Id

@@ -1,6 +1,5 @@
 package com.delogica.tienda_api.domain;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 import jakarta.persistence.*;
@@ -29,7 +28,7 @@ public class Product {
     private String description;
 
     @Column(precision = 10, scale = 2)
-    private BigDecimal price;
+    private Double price;
 
     @Column()
     private Integer stock;

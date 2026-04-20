@@ -1,7 +1,5 @@
 package com.delogica.tienda_api.domain;
 
-import java.math.BigDecimal;
-
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -37,6 +35,6 @@ public class OrderItem
     private Integer quantity;
 
     @Column(precision = 10, scale = 2)
-    private BigDecimal unitPrice;
+    private Double unitPrice;
     
 }

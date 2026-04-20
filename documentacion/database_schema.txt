@@ -1,0 +1,187 @@
+================================================================================
+                    ESQUEMA DE BASE DE DATOS - TIENDA API
+================================================================================
+
+================================================================================
+TABLA: customers
+================================================================================
+Descripción: Almacena información de los clientes
+Relaciones salientes: 
+  - 1:N con addresses (un cliente puede tener múltiples direcciones)
+  - 1:N con orders (un cliente puede tener múltiples pedidos)
+
++---------------+------------------+-------------+-------------+------------------+
+| Columna       | Tipo             | Nullable    | Unique      | Observaciones    |
++---------------+------------------+-------------+-------------+------------------+
+| id            | BIGINT           | NO (PK)     | YES         | Auto-increment   |
+| full_name     | VARCHAR(255)     | NO          | NO          |                  |
+| email         | VARCHAR(255)     | NO          | YES         | Login principal  |
+| phone         | VARCHAR(255)     | YES         | NO          |                  |
+| created_at    | TIMESTAMP        | NO          | NO          | Auto @PrePersist |
+| updated_at    | TIMESTAMP        | NO          | NO          | Auto @PreUpdate  |
++---------------+------------------+-------------+-------------+------------------+
+
+EJEMPLO DE DATOS:
++----+------------------+-------------------------+---------------+---------------------+---------------------+
+| id | full_name        | email                   | phone         | created_at          | updated_at          |
++----+------------------+-------------------------+---------------+---------------------+---------------------+
+| 1  | Juan Pérez       | juan.perez@email.com    | +34600123456  | 2024-01-15 10:30:00 | 2024-01-15 10:30:00 |
+| 2  | María García     | maria.garcia@email.com  | +34610987654  | 2024-01-16 14:20:00 | 2024-02-10 09:15:00 |
+| 3  | Carlos López     | carlos.lopez@email.com  | +34620456789  | 2024-01-20 11:45:00 | 2024-01-20 11:45:00 |
++----+------------------+-------------------------+---------------+---------------------+---------------------+
+
+
+================================================================================
+TABLA: addresses
+================================================================================
+Descripción: Direcciones de envío/facturación de los clientes
+Relaciones entrantes:
+  - N:1 con customers (muchas direcciones pertenecen a un cliente)
+Relaciones salientes:
+  - 1:N con orders (una dirección puede usarse en múltiples pedidos)
+
++---------------+------------------+-------------+-------------+---------------------------+
+| Columna       | Tipo             | Nullable    | Unique      | Observaciones             |
++---------------+------------------+-------------+-------------+---------------------------+
+| id            | BIGINT           | NO (PK)     | YES         | Auto-increment            |
+| customer_id   | BIGINT           | NO (FK)     | NO          | → customers.id            |
+| line1         | VARCHAR(255)     | NO          | NO          | Calle, número             |
+| line2         | VARCHAR(255)     | YES         | NO          | Piso, puerta, etc.        |
+| city          | VARCHAR(255)     | YES         | NO          |                           |
+| postal_code   | INTEGER          | NO          | NO          |                           |
+| country       | VARCHAR(255)     | NO          | NO          |                           |
+| is_default    | BOOLEAN          | NO          | NO          | Dirección predeterminada  |
++---------------+------------------+-------------+-------------+---------------------------+
+
+EJEMPLO DE DATOS:
++----+-------------+-------------------------+------------+----------+-------------+---------+------------+
+| id | customer_id | line1                   | line2      | city     | postal_code | country | is_default |
++----+-------------+-------------------------+------------+----------+-------------+---------+------------+
+| 1  | 1           | Calle Mayor 45          | 3º B       | Madrid   | 28013       | España  | true       |
+| 2  | 1           | Avenida Libertad 12     | NULL       | Madrid   | 28050       | España  | false      |
+| 3  | 2           | Gran Vía 88             | 5º A       | Madrid   | 28015       | España  | true       |
+| 4  | 3           | Paseo de la Castellana  | Bajo Izq   | Madrid   | 28046       | España  | true       |
++----+-------------+-------------------------+------------+----------+-------------+---------+------------+
+
+NOTA: customer_id es la columna añadida por la relación N:1 con customers
+      Una dirección pertenece a UN solo cliente (customer_id)
+
+
+================================================================================
+TABLA: products
+================================================================================
+Descripción: Catálogo de productos disponibles
+Relaciones salientes:
+  - 1:N con order_items (un producto puede estar en múltiples items de pedidos)
+
++---------------+------------------+-------------+-------------+------------------+
+| Columna       | Tipo             | Nullable    | Unique      | Observaciones    |
++---------------+------------------+-------------+-------------+------------------+
+| id            | BIGINT           | NO (PK)     | YES         | Auto-increment   |
+| sku           | VARCHAR(255)     | NO          | YES         | Código único     |
+| name          | VARCHAR(255)     | NO          | NO          |                  |
+| description   | TEXT             | YES         | NO          |                  |
+| price         | DECIMAL(10,2)    | NO          | NO          | Precio unitario  |
+| stock         | INTEGER          | NO          | NO          | Cantidad actual  |
+| active        | BOOLEAN          | NO          | NO          | Producto activo  |
+| created_at    | TIMESTAMP        | NO          | NO          | Auto @PrePersist |
+| updated_at    | TIMESTAMP        | NO          | NO          | Auto @PreUpdate  |
++---------------+------------------+-------------+-------------+------------------+
+
+EJEMPLO DE DATOS:
++----+-----------+------------------+---------------------+---------+-------+--------+---------------------+---------------------+
+| id | sku       | name             | description         | price   | stock | active | created_at          | updated_at          |
++----+-----------+------------------+---------------------+---------+-------+--------+---------------------+---------------------+
+| 1  | PROD-001  | Laptop Dell XPS  | 16GB RAM, 512GB SSD | 1299.99 | 15    | true   | 2024-01-10 08:00:00 | 2024-03-15 12:30:00 |
+| 2  | PROD-002  | Mouse Logitech   | Inalámbrico         | 29.99   | 50    | true   | 2024-01-10 08:05:00 | 2024-01-10 08:05:00 |
+| 3  | PROD-003  | Teclado Mecánico | RGB, switches blue  | 89.99   | 30    | true   | 2024-01-10 08:10:00 | 2024-02-20 10:15:00 |
+| 4  | PROD-004  | Monitor 27"      | 4K, 144Hz           | 449.99  | 0     | false  | 2024-01-10 08:15:00 | 2024-03-01 16:45:00 |
++----+-----------+------------------+---------------------+---------+-------+--------+---------------------+---------------------+
+
+
+================================================================================
+TABLA: orders
+================================================================================
+Descripción: Pedidos realizados por los clientes
+Relaciones entrantes:
+  - N:1 con customers (muchos pedidos pertenecen a un cliente)
+  - N:1 con addresses (muchos pedidos usan una dirección de envío)
+Relaciones salientes:
+  - 1:N con order_items (un pedido tiene múltiples items/líneas)
+
++---------------------+------------------+-------------+-------------+-------------------------+
+| Columna             | Tipo             | Nullable    | Unique      | Observaciones           |
++---------------------+------------------+-------------+-------------+-------------------------+
+| id                  | BIGINT           | NO (PK)     | YES         | Auto-increment          |
+| customer_id         | BIGINT           | NO (FK)     | NO          | → customers.id          |
+| shipping_address_id | BIGINT           | NO (FK)     | NO          | → addresses.id          |
+| status              | VARCHAR(50)      | NO          | NO          | ENUM: ver tabla abajo   |
+| order_date          | TIMESTAMP        | NO          | NO          | Auto @PrePersist        |
+| total               | DECIMAL(10,2)    | NO          | NO          | Calculado desde items   |
++---------------------+------------------+-------------+-------------+-------------------------+
+
+VALORES ENUM para status (OrderStatus):
+  - CREATED
+  - PAID
+  - SHIPPED
+  - CANCELLED
+
+EJEMPLO DE DATOS:
++----+-------------+---------------------+----------+---------------------+----------+
+| id | customer_id | shipping_address_id | status   | order_date          | total    |
++----+-------------+---------------------+----------+---------------------+----------+
+| 1  | 1           | 1                   | SHIPPED  | 2024-02-01 10:30:00 | 1329.98  |
+| 2  | 2           | 3                   | PAID     | 2024-02-15 14:20:00 | 89.99    |
+| 3  | 1           | 2                   | CREATED  | 2024-03-01 09:15:00 | 29.99    |
+| 4  | 3           | 4                   | SHIPPED  | 2024-03-10 16:45:00 | 1749.97  |
++----+-------------+---------------------+----------+---------------------+----------+
+
+NOTAS: 
+  - customer_id: columna añadida por la relación N:1 con customers
+  - shipping_address_id: columna añadida por la relación N:1 con addresses
+  Un pedido pertenece a UN cliente y usa UNA dirección de envío
+
+
+================================================================================
+TABLA: order_items
+================================================================================
+Descripción: Líneas/items de cada pedido (detalle de productos en pedido)
+Relaciones entrantes:
+  - N:1 con orders (muchos items pertenecen a un pedido)
+  - N:1 con products (muchos items referencian a un producto)
+
++---------------+------------------+-------------+-------------+---------------------------+
+| Columna       | Tipo             | Nullable    | Unique      | Observaciones             |
++---------------+------------------+-------------+-------------+---------------------------+
+| id            | BIGINT           | NO (PK)     | YES         | Auto-increment            |
+| order_id      | BIGINT           | NO (FK)     | NO          | → orders.id               |
+| product_id    | BIGINT           | NO (FK)     | NO          | → products.id             |
+| quantity      | INTEGER          | NO          | NO          | Unidades compradas        |
+| unit_price    | DECIMAL(10,2)    | NO          | NO          | Precio en momento compra  |
++---------------+------------------+-------------+-------------+---------------------------+
+
+EJEMPLO DE DATOS:
++----+----------+------------+----------+------------+
+| id | order_id | product_id | quantity | unit_price |
++----+----------+------------+----------+------------+
+| 1  | 1        | 1          | 1        | 1299.99    |
+| 2  | 1        | 2          | 1        | 29.99      |
+| 3  | 2        | 3          | 1        | 89.99      |
+| 4  | 3        | 2          | 1        | 29.99      |
+| 5  | 4        | 1          | 1        | 1299.99    |
+| 6  | 4        | 2          | 15       | 29.99      |
++----+----------+------------+----------+------------+
+
+NOTAS:
+  - order_id: columna añadida por la relación N:1 con orders
+  - product_id: columna añadida por la relación N:1 con products
+  Un item pertenece a UN pedido y referencia a UN producto
+  
+CÁLCULO DEL TOTAL:
+  Pedido 1: (1 × 1299.99) + (1 × 29.99) = 1329.98
+  Pedido 2: (1 × 89.99) = 89.99
+  Pedido 3: (1 × 29.99) = 29.99
+  Pedido 4: (1 × 1299.99) + (15 × 29.99) = 1749.97
+
+
+
