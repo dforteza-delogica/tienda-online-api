@@ -1,5 +1,6 @@
 package com.delogica.tienda_api.domain;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -37,7 +38,7 @@ public class Order {
     private LocalDateTime orderDate;
 
     @Column(precision = 10, scale = 2)
-    private Double total;
+    private BigDecimal total;
 
     @OneToMany(mappedBy = "order", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     private List<OrderItem> items = new ArrayList<>();
