@@ -1,8 +1,11 @@
 package com.delogica.tienda_api.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+
 import com.delogica.tienda_api.domain.Product;
 
+@Repository
 public interface ProductRepository extends JpaRepository<Product, Long>
 {
     // Endpoint:    GET /api/products/sku/{sku}

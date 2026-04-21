@@ -1,4 +1,4 @@
-package com.delogica.tienda_api.service;
+package com.delogica.tienda_api.service.interfaces;
 
 import java.util.List;
 
