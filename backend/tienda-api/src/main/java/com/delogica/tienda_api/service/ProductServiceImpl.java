@@ -3,6 +3,7 @@ package com.delogica.tienda_api.service;
 import java.util.List;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.delogica.tienda_api.domain.Product;
 import com.delogica.tienda_api.exception.ConflictException;
@@ -19,6 +20,7 @@ public class ProductServiceImpl implements ProductService
     private final ProductRepository repository;
 
     @Override
+    @Transactional(readOnly = true)
     public Product findById(Long id) 
     {
         Product product = repository
@@ -27,7 +29,9 @@ public class ProductServiceImpl implements ProductService
         return (product);
     }
 
+    
     @Override
+    @Transactional(readOnly = true)
     public List<Product> findAll() 
     {
         return (repository.findAll());
@@ -35,6 +39,7 @@ public class ProductServiceImpl implements ProductService
 
 
     @Override
+    @Transactional
     public Product save(Product product) 
     {
         if (repository.existsBySku(product.getSku()))
@@ -44,6 +49,7 @@ public class ProductServiceImpl implements ProductService
     }
 
     @Override
+    @Transactional
     public Product update(Product product)
     {
         // 1. VALIDAR EXISTENCIA POR ID
@@ -57,6 +63,7 @@ public class ProductServiceImpl implements ProductService
 
 
     @Override
+    @Transactional
     public void deleteById(Long id) 
     {
         if (!repository.existsById(id))
