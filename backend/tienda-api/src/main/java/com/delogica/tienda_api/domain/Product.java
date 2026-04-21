@@ -1,57 +1,56 @@
+// src/main/java/com/example/shop/domain/Product.java
 package com.delogica.tienda_api.domain;
+
+import jakarta.persistence.*;
+import lombok.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
-import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
-
 @Entity
-@Table(name = "products")
-@Getter @Setter 
-@NoArgsConstructor
-@AllArgsConstructor
+@Table(name = "products", indexes = {
+        @Index(name = "idx_product_sku", columnList = "sku", unique = true),
+        @Index(name = "idx_product_name", columnList = "name")
+})
+@Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
+@EqualsAndHashCode(of = "id")
 public class Product {
-    
-    @Id 
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+
+    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(unique = true)
+    @Column(nullable = false, length = 40, unique = true)
     private String sku;
 
-    @Column()
+    @Column(nullable = false, length = 160)
     private String name;
 
+    @Column(length = 2000)
     private String description;
 
-    @Column(precision = 10, scale = 2)
+    @Column(nullable = false, precision = 12, scale = 2)
     private BigDecimal price;
 
-    @Column()
+    @Column(nullable = false)
     private Integer stock;
 
-    @Column()
-    private Boolean active;
+    @Column(nullable = false)
+    private boolean active;
 
-    @Column(updatable = false)
+    @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
-    @Column()
+    @Column(nullable = false)
     private LocalDateTime updatedAt;
 
     @PrePersist
-    protected void onCreate() 
-    {
+    void onCreate() {
         createdAt = LocalDateTime.now();
-        updatedAt = LocalDateTime.now();
+        updatedAt = createdAt;
     }
 
     @PreUpdate
-    protected void onUpdate() {
+    void onUpdate() {
         updatedAt = LocalDateTime.now();
     }
 }

@@ -1,42 +1,32 @@
+// src/main/java/com/example/shop/domain/OrderItem.java
 package com.delogica.tienda_api.domain;
+
+import jakarta.persistence.*;
+import lombok.*;
 
 import java.math.BigDecimal;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.Table;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
-
 @Entity
-@Table(name = "order_items")
-@Getter @Setter
-@NoArgsConstructor
-@AllArgsConstructor
-public class OrderItem 
-{
+@Table(name = "order_items", indexes = {
+        @Index(name = "idx_orderitem_order", columnList = "order_id"),
+        @Index(name = "idx_orderitem_product", columnList = "product_id")
+})
+@Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
+@EqualsAndHashCode(of = "id")
+public class OrderItem {
+
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "order_id")
+    @ManyToOne(optional = false, fetch = FetchType.LAZY)
     private Order order;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "product_id")
+    @ManyToOne(optional = false, fetch = FetchType.EAGER)
     private Product product;
 
+    @Column(nullable = false)
     private Integer quantity;
 
-    @Column(precision = 10, scale = 2)
+    @Column(nullable = false, precision = 12, scale = 2)
     private BigDecimal unitPrice;
-    
 }

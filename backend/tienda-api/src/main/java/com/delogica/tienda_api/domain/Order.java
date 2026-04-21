@@ -1,51 +1,43 @@
+// src/main/java/com/example/shop/domain/Order.java
 package com.delogica.tienda_api.domain;
+
+import jakarta.persistence.*;
+import lombok.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
-import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
-
 @Entity
-@Table(name = "orders")
-@Getter @Setter 
-@NoArgsConstructor
-@AllArgsConstructor
+@Table(name = "orders", indexes = {
+        @Index(name = "idx_order_customer", columnList = "customer_id"),
+        @Index(name = "idx_order_date", columnList = "orderDate")
+})
+@Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
+@EqualsAndHashCode(of = "id")
 public class Order {
-    
-    @Id 
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+
+    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "shipping_address_id")
-    private Address shippingAddress;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "customer_id")
+    @ManyToOne(optional = false, fetch = FetchType.LAZY)
     private Customer customer;
 
-    @Enumerated(EnumType.STRING)
-    @Column()
-    private OrderStatus status;
+    @ManyToOne(optional = false, fetch = FetchType.LAZY)
+    private Address shippingAddress;
 
-    @Column()
+    @Column(nullable = false)
     private LocalDateTime orderDate;
 
-    @Column(precision = 10, scale = 2)
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    private OrderStatus status;
+
+    @Column(nullable = false, precision = 12, scale = 2)
     private BigDecimal total;
 
-    @OneToMany(mappedBy = "order", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    @Builder.Default
+    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<OrderItem> items = new ArrayList<>();
-
-    @PrePersist
-    protected void onCreate() {
-        orderDate = LocalDateTime.now();
-        status = OrderStatus.CREATED;
-    }
 }

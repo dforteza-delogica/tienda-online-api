@@ -1,41 +1,38 @@
+// src/main/java/com/example/tienda_api/domain/Address.java
 package com.delogica.tienda_api.domain;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.Table;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import jakarta.persistence.*;
+import lombok.*;
 
 @Entity
-@Table(name = "adresses")
-@Getter @Setter 
-@NoArgsConstructor
-@AllArgsConstructor
-public class Address 
-{
+@Table(name = "addresses", indexes = {
+        @Index(name = "idx_address_customer", columnList = "customer_id")
+})
+@Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
+@EqualsAndHashCode(of = "id")
+public class Address {
+
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "customer_id")
-    Customer customer;
+    @ManyToOne(optional = false, fetch = FetchType.LAZY)
+    private Customer customer;
 
+    @Column(nullable = false, length = 160)
     private String line1;
 
+    @Column(length = 160)
     private String line2;
 
+    @Column(nullable = false, length = 80)
     private String city;
 
+    @Column(nullable = false, length = 20)
     private String postalCode;
 
+    @Column(nullable = false, length = 80)
     private String country;
 
-    private Boolean isDefault = false;
+    @Column(nullable = false)
+    private boolean isDefault;
 }

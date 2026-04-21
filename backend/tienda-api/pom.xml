@@ -76,6 +76,14 @@
 			<version>1.5.5.Final</version>
     	</dependency>
 
+		<!-- FLYWAY MYSQL -->
+		<dependency>
+			<groupId>org.flywaydb</groupId>
+			<artifactId>flyway-mysql</artifactId>
+			<version>11.7.2</version>
+			<scope>compile</scope>
+		</dependency>
+
 
 	</dependencies>
 
@@ -128,7 +136,6 @@
 									<artifactId>lombok-mapstruct-binding</artifactId>
 									<version>0.2.0</version>
 								</path>
-
 
 							</annotationProcessorPaths>
 						</configuration>
