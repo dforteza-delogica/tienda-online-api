@@ -12,7 +12,7 @@ import lombok.Setter;
 @AllArgsConstructor
 public class OrderItemResponseDto 
 {
-    private Long    productoId;
+    private Long    productId;
     private Integer quantity;
     private BigDecimal  unitPrice;
 }
