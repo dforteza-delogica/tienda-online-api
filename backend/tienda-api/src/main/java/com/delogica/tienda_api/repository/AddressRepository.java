@@ -21,9 +21,9 @@ public interface AddressRepository extends JpaRepository<Address, Long>
     
     // Endpoint:    GET /api/customers/{customerId}/addresses/default
     // Sql:         SELECT * FROM address WHERE customer_id = :customerId AND is_default = true
-    @Modifying
+    @Modifying(clearAutomatically = true)
     @Transactional
     @Query("UPDATE Address a SET a.isDefault = false WHERE a.customer.id = :customerId")
-    Void clearDefaultByCustomerId(@Param("customerId") Long customerId);
+    void clearDefaultByCustomerId(@Param("customerId") Long customerId);
 
 }
