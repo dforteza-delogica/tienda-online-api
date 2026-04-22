@@ -9,6 +9,7 @@ import org.mapstruct.MappingTarget;
 import com.delogica.tienda_api.domain.Product;
 import com.delogica.tienda_api.dto.request.ProductRequestDto;
 import com.delogica.tienda_api.dto.response.ProductResponseDto;
+import com.delogica.tienda_api.dto.update.ProductUpdateDto;
 
 @Mapper(componentModel = "spring")
 public interface ProductMapper 
@@ -22,7 +23,9 @@ public interface ProductMapper
     List<ProductResponseDto> toResponseDtoList(List<Product> products);
 
     @Mapping(target = "id", ignore = true)
+    @Mapping(target = "sku", ignore = true)
+    @Mapping(target = "active", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
-    void updateProductFromDto(ProductRequestDto dto, @MappingTarget Product product);
+    void updateProductFromDto(ProductUpdateDto dto, @MappingTarget Product product);
 }

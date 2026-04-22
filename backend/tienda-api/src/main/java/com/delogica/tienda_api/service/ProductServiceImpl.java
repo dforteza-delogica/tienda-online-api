@@ -47,33 +47,32 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     @Transactional
-    public Product update(Product product) 
+    public Product update(Product product)
     {
-        // 1.BUSCAR PRODUCTO ACTIVO POR ID
+        // 1. VALIDAR QUE EXISTE Y ESTA ACTIVO
         Product existing = repository
                             .findByIdAndActiveTrue(product.getId())
-                            .orElseThrow(() -> new ResourceNotFoundException("Producto no encontrado o inactivo: " + product.getId())
-            );
+                            .orElseThrow(() -> new ResourceNotFoundException("Producto no encontrado o inactivo: " + product.getId()));
 
-        // 2. Aplicar cambios controladamente
+        // 2. UPDATE CAMPOS PERMITIDOS
         existing.setName(product.getName());
-        existing.setPrice(product.getPrice());
         existing.setDescription(product.getDescription());
+        existing.setPrice(product.getPrice());
+        existing.setStock(product.getStock());
 
-        // 3. GUARDAR CAMBIOS
-        return (existing);
+        // 3. UPDATE CAMBIOS
+        return (repository.save(existing));
     }
 
     @Override
     @Transactional
     public void deleteById(Long id) 
     {
-        //SOFT DELETE: DESACTIVAR EL PRODUCTO EN LUGAR DE ELIMINARLO FISICAMENTE
         // 1. VALIDAR EXISTENCIA POR ID
         Product product = repository
                             .findById(id)
                             .orElseThrow(() -> new ResourceNotFoundException("Producto no encontrado: " + id));
-        // 2. DESACTIVAR EL PRODUCTO
+        // 2. SOFT DELETE (INACTIVAR)
         product.setActive(false);
 
         // 3. UPDATE CAMBIOS
