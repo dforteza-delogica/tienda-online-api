@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.delogica.tienda_api.domain.Product;
 import com.delogica.tienda_api.dto.request.ProductRequestDto;
 import com.delogica.tienda_api.dto.response.ProductResponseDto;
+import com.delogica.tienda_api.dto.update.ProductUpdateDto;
 import com.delogica.tienda_api.mapper.ProductMapper;
 import com.delogica.tienda_api.service.interfaces.ProductService;
 
@@ -27,8 +28,8 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class ProductController
 {
-    private final ProductService productService;
-    private final ProductMapper productMapper;
+    private final ProductService    productService;
+    private final ProductMapper     productMapper;
 
     // 1. CREATE
     @PostMapping
@@ -79,7 +80,7 @@ public class ProductController
     @PutMapping("/{id}")
     public ResponseEntity<ProductResponseDto> update(
             @PathVariable Long id,
-            @Valid @RequestBody ProductRequestDto dto)
+            @Valid @RequestBody ProductUpdateDto dto)
     {
         // 1. CARGAR ENTITY ACTUAL
         Product existing = productService.findById(id);

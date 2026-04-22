@@ -35,7 +35,8 @@ public class Product {
     private Integer stock;
 
     @Column(nullable = false)
-    private boolean active;
+    @Builder.Default
+    private boolean active = true;
 
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;

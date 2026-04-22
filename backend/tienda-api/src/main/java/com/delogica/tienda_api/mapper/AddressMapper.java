@@ -14,6 +14,5 @@ public interface AddressMapper
     @Mapping(target = "customer", ignore = true)
     Address toEntity(AddressRequestDto dto);
     
-    @Mapping(target = "isDefault", ignore = true)
     AddressResponseDto toResponseDto(Address address);
 }

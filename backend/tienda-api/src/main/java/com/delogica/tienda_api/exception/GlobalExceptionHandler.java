@@ -1,7 +1,9 @@
 package com.delogica.tienda_api.exception;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.springframework.dao.DataIntegrityViolationException;
@@ -17,13 +19,16 @@ import jakarta.servlet.http.HttpServletRequest;
 public class GlobalExceptionHandler 
 {
     // 400 - VALIDACION DE DATOS
-    @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<Object> handleValidationException(MethodArgumentNotValidException ex, HttpServletRequest request) 
-    {
-        Map<String, String> errors = new HashMap<>();
+@ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<Object> handleValidationExceptions(
+            MethodArgumentNotValidException ex, HttpServletRequest request) {
 
+        List<Map<String, String>> details = new ArrayList<>();
         ex.getBindingResult().getFieldErrors().forEach(error -> {
-            errors.put(error.getField(), error.getDefaultMessage());
+            Map<String, String> fieldError = new HashMap<>();
+            fieldError.put("field", error.getField());
+            fieldError.put("message", error.getDefaultMessage());
+            details.add(fieldError);
         });
 
         Map<String, Object> body = new HashMap<>();
@@ -33,7 +38,7 @@ public class GlobalExceptionHandler
         body.put("error", "Bad Request");
         body.put("code", "VALIDATION_ERROR");
         body.put("message", "Los datos enviados no superan la validación");
-        // body.put("details", details);
+        body.put("details", details);
 
         return (new ResponseEntity<>(body, HttpStatus.BAD_REQUEST));
     }
@@ -83,7 +88,7 @@ public class GlobalExceptionHandler
         body.put("code", "CONFLICT");
         body.put("message", ex.getMessage());
 
-        return new ResponseEntity<>(body, HttpStatus.CONFLICT);
+        return (new ResponseEntity<>(body, HttpStatus.CONFLICT));
     }
 
     // 409 - ERROR DE INTEGRIDAD DE DATOS
