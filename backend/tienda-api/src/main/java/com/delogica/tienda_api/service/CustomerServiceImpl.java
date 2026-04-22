@@ -58,10 +58,15 @@ public class CustomerServiceImpl implements CustomerService
     public Customer update(Customer customer)
     {
         // 1. VALIDAR EXISTENCIA
-        if (!customerRepository.existsById(customer.getId()))
-            throw new ResourceNotFoundException("Cliente no encontrado: " + customer.getId());
+        Customer existing = customerRepository
+                                .findById(customer.getId())
+                                .orElseThrow(() -> new ResourceNotFoundException("Cliente no encontrado: " + customer.getId()));
 
-        // 2. PERSISTIR CAMBIOS
+        // 2. VALIDAR EMAIL (NO PERTENECE A OTRO CLIENTE)
+        if (!existing.getEmail().equals(customer.getEmail()) && customerRepository.existsByEmail(customer.getEmail()))
+            throw new ConflictException("Ya existe un cliente con el email: " + customer.getEmail());
+
+        // 3. PERSISTIR Y DEVOLVER
         return (customerRepository.save(customer));
     }
 
@@ -82,19 +87,21 @@ public class CustomerServiceImpl implements CustomerService
     public Address addAddress(Long customerId, Address address)
     {
         // 1. VALIDAR QUE EL CLIENTE EXISTE
-        Customer customer = customerRepository.findById(customerId)
-                .orElseThrow(() -> new ResourceNotFoundException("Cliente no encontrado: " + customerId));
+        Customer customer = customerRepository
+                                .findById(customerId)
+                                .orElseThrow(() -> new ResourceNotFoundException("Cliente no encontrado: " + customerId));
+        // 2. GARANTIZAR QUE isDefault NO es NULL
+        if (address.getIsDefault() == null) 
+            address.setIsDefault(false);
 
-        // 2. SI ES DEFAULT, LIMPIAR EL DEFAULT ANTERIOR
-        if (Boolean.TRUE.equals(address.isDefault()))
-        {
+        // 3. SI ES DEFAULT, LIMPIAR DEFAULT ANTERIOR
+        if (address.getIsDefault()) 
             addressRepository.clearDefaultByCustomerId(customerId);
-        }
 
-        // 3. ASIGNAR CLIENTE A LA DIRECCION
+        // 4. ASOCIAR CON EL CLIENTE
         address.setCustomer(customer);
 
-        // 4. PERSISTIR Y DEVOLVER
+        // 5. PERSISTIR Y DEVOLVER
         return (addressRepository.save(address));
     }
 
@@ -107,18 +114,22 @@ public class CustomerServiceImpl implements CustomerService
                 .findById(customerId)
                 .orElseThrow(() -> new ResourceNotFoundException("Cliente no encontrado: " + customerId));
 
-        // 2. VALIDAR QUE LA DIRECCION EXISTE Y PERTENECE AL CLIENTE
+        // 2. VALIDAR QUE LA DIRECCION EXISTE
         Address address = addressRepository
-                            .findByIdAndCustomerId(addressId, customerId)
-                            .orElseThrow(() -> new InvalidOperationException("La dirección " + addressId + " no pertenece al cliente " + customerId));
+                                .findById(addressId)
+                                .orElseThrow(() -> new ResourceNotFoundException("Dirección no encontrada: " + addressId));
 
-        // 3. LIMPIAR DEFAULT ANTERIOR
+        // 3. VALIDAR QUE PERTENECE AL CLIENTE
+        if (!address.getCustomer().getId().equals(customerId))
+            throw new InvalidOperationException("La dirección " + addressId + " no pertenece al cliente " + customerId);
+
+        // 4. LIMPIAR DEFAULT ANTERIOR
         addressRepository.clearDefaultByCustomerId(customerId);
 
-        // 4. MARCAR COMO DEFAULT
-        address.setDefault(true);
+        // 5. MARCAR COMO DEFAULT
+        address.setIsDefault(true);
 
-        // 5. PERSISTIR Y DEVOLVER
+        // 6. PERSISTIR Y DEVOLVER
         return (addressRepository.save(address));
     }
 }

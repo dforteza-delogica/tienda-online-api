@@ -19,7 +19,6 @@ public interface CustomerMapper
     @Mapping(target = "addresses", ignore = true)
     Customer toEntity(CustomerRequestDto dto);
 
-    @Mapping(target = "orders", ignore = true)
     CustomerResponseDto toResponseDto(Customer customer);
 
     List<CustomerResponseDto> toResponseDtoList(List<Customer> customers);

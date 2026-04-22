@@ -17,7 +17,6 @@ public class CustomerResponseDto
     private String                      email;
     private String                      phone;
     private List<AddressResponseDto>    addresses;
-    private List<OrderResponseDto>      orders;
     private String                      createdAt;
     private String                      updatedAt;
 }
