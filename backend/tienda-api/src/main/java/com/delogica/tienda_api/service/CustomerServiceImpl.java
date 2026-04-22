@@ -37,7 +37,7 @@ public class CustomerServiceImpl implements CustomerService
     @Transactional(readOnly = true)
     public List<Customer> findAll()
     {
-        // 1. LISTAR TODO
+        // 1. LISTAR TODOS
         return (customerRepository.findAll());
     }
 

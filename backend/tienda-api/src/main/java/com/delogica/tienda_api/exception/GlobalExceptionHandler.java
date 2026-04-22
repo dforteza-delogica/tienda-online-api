@@ -83,7 +83,7 @@ public class GlobalExceptionHandler
         body.put("code", "CONFLICT");
         body.put("message", ex.getMessage());
 
-        return new ResponseEntity<>(body, HttpStatus.CONFLICT);
+        return (new ResponseEntity<>(body, HttpStatus.CONFLICT));
     }
 
     // 409 - ERROR DE INTEGRIDAD DE DATOS
