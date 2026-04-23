@@ -162,6 +162,18 @@ public class OrderServiceImpl implements OrderService
             throw new InvalidOperationException(
                 "Transición de estado no permitida: " + current + " → " + newStatus);
 
+        
+        // 3. SI SE CANCELA DESHACER EL STOCK
+        if (newStatus == OrderStatus.CANCELLED)
+        {
+            for (OrderItem item : order.getItems())
+            {
+                Product product = item.getProduct();
+                product.setStock(product.getStock() + item.getQuantity());
+                productRepository.save(product);
+            }
+        }
+
         // 3. APLICAR NUEVO ESTADO
         order.setStatus(newStatus);
 
