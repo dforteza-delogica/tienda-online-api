@@ -17,19 +17,26 @@ import com.delogica.tienda_api.repository.ProductRepository;
 import com.delogica.tienda_api.service.interfaces.ProductService;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
-public class ProductServiceImpl implements ProductService {
+public class ProductServiceImpl implements ProductService 
+{
     private final ProductRepository repository;
     private final ProductMapper     productMapper;
 
     @Override
     @Transactional(readOnly = true)
-    public Product findById(Long id) {
+    public Product findById(Long id) 
+    {
+        log.debug("Buscando producto por id: {}", id);
+        
         Product product = repository
                 .findByIdAndActiveTrue(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Producto no encontrado o inactivo: " + id));
+        
         return (product);
     }
 
@@ -37,15 +44,15 @@ public class ProductServiceImpl implements ProductService {
     @Transactional(readOnly = true)
     public Page<ProductResponseDto> findAll(String name, Pageable pageable) 
     {
+        log.debug("Listando productos - filtro nombre: {}, página: {}", name, pageable.getPageNumber());
 
         // 1. OBTENER PAGE SEGÚN FILTROS
         Page<Product> page;
 
-        if (name != null && !name.isEmpty()) {
+        if (name != null && !name.isEmpty())
             page = repository.findByNameContainingIgnoreCaseAndActiveTrue(name, pageable);
-        } else {
+        else
             page = repository.findByActiveTrue(pageable);
-        }
 
         // 2. CONVERTIR A DTO
         List<ProductResponseDto> dtos = page.getContent()
@@ -63,16 +70,28 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     @Transactional
-    public Product save(Product product) {
-        if (repository.existsBySku(product.getSku()))
+    public Product save(Product product) 
+    {
+        log.info("Creando producto con SKU: {}", product.getSku());
+        
+        if (repository.existsBySku(product.getSku())) 
+        {
+            log.warn("Intento de crear producto con SKU duplicado: {}", product.getSku());
             throw new ConflictException("El producto con SKU: " + product.getSku() + " ya existe");
+        }
 
-        return (repository.save(product));
+        Product saved = repository.save(product);
+        log.info("Producto creado exitosamente - id: {}, SKU: {}", saved.getId(), saved.getSku());
+        
+        return (saved);
     }
 
     @Override
     @Transactional
-    public Product update(Product product) {
+    public Product update(Product product) 
+    {
+        log.info("Actualizando producto id: {}", product.getId());
+        
         // 1. VALIDAR QUE EXISTE Y ESTA ACTIVO
         Product existing = repository
                 .findByIdAndActiveTrue(product.getId())
@@ -86,21 +105,29 @@ public class ProductServiceImpl implements ProductService {
         existing.setStock(product.getStock());
 
         // 3. UPDATE CAMBIOS
-        return (repository.save(existing));
+        Product updated = repository.save(existing);
+        log.info("Producto actualizado exitosamente - id: {}", updated.getId());
+        
+        return (updated);
     }
 
     @Override
     @Transactional
-    public void deleteById(Long id) {
+    public void deleteById(Long id) 
+    {
+        log.info("Eliminando (soft delete) producto id: {}", id);
+        
         // 1. VALIDAR EXISTENCIA POR ID
         Product product = repository
                 .findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Producto no encontrado: " + id));
+        
         // 2. SOFT DELETE (INACTIVAR)
         product.setActive(false);
 
         // 3. UPDATE CAMBIOS
         repository.save(product);
+        log.info("Producto desactivado exitosamente - id: {}", id);
     }
 
 }

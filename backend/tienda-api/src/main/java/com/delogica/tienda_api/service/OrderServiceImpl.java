@@ -30,7 +30,9 @@ import com.delogica.tienda_api.repository.ProductRepository;
 import com.delogica.tienda_api.service.interfaces.OrderService;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class OrderServiceImpl implements OrderService
@@ -46,6 +48,8 @@ public class OrderServiceImpl implements OrderService
     @Transactional
     public Order save(OrderRequestDto dto)
     {
+        log.info("Creando pedido para cliente: {}, items: {}", dto.getCustomerId(), dto.getItems().size());
+
         // 1. VALIDAR QUE EL CLIENTE EXISTE
         Customer customer = customerRepository
                                 .findById(dto.getCustomerId())
@@ -81,8 +85,11 @@ public class OrderServiceImpl implements OrderService
                 throw new InvalidOperationException("El producto no está activo: " + product.getId());
 
             // 5.3 VALIDAR STOCK SUFICIENTE
-            if (product.getStock() < itemDto.getQuantity())
+            if (product.getStock() < itemDto.getQuantity()) {
+                log.warn("Stock insuficiente - producto: {}, solicitado: {}, disponible: {}", 
+                    product.getId(), itemDto.getQuantity(), product.getStock());
                 throw new ConflictException("Stock insuficiente en el producto "+product.getName() +" | Disponible:" + product.getStock());
+            }
 
             // 5.4 CAPTURAR PRECIO SNAPSHOT
             BigDecimal unitPrice = product.getPrice();
@@ -99,6 +106,8 @@ public class OrderServiceImpl implements OrderService
 
             // DESCONTAR STOCK
             product.setStock(product.getStock() - itemDto.getQuantity());
+            log.debug("Stock descontado - producto: {}, cantidad: {}, stock restante: {}", 
+                product.getId(), itemDto.getQuantity(), product.getStock());
         }
 
         // 6. CALCULAR TOTAL DEL PEDIDO
@@ -109,23 +118,31 @@ public class OrderServiceImpl implements OrderService
         order.setTotal(total);
 
         // 7. PERSISTIR Y DEVOLVER
-        return orderRepository.save(order);
+        Order saved = orderRepository.save(order);
+        log.info("Pedido creado exitosamente - id: {}, total: {}, items: {}", 
+            saved.getId(), saved.getTotal(), saved.getItems().size());
+        
+        return (saved);
     }
 
     @Override
     @Transactional(readOnly = true)
     public Order findById(Long id)
     {
+        log.debug("Buscando pedido por id: {}", id);
         // 1. BUSCAR O LANZAR EXCEPCION
-        return orderRepository
+        return (orderRepository
                     .findById(id)
-                    .orElseThrow(() -> new ResourceNotFoundException("Pedido no encontrado: " + id));
+                    .orElseThrow(() -> new ResourceNotFoundException("Pedido no encontrado: " + id)));
     }
 
     @Override
     @Transactional(readOnly = true)
     public Page<OrderResponseDto> findAll(Long customerId, OrderStatus status, Pageable pageable)
     {
+        log.debug("Listando pedidos - cliente: {}, estado: {}, página: {}", 
+            customerId, status, pageable.getPageNumber());
+
         // 1. OBTENER PAGE CON FILTROS
         Page<Order> page = orderRepository.finByFilters(customerId, status, pageable);
 
@@ -141,6 +158,8 @@ public class OrderServiceImpl implements OrderService
     @Transactional
     public Order updateStatus(Long id, OrderStatus newStatus)
     {
+        log.info("Actualizando estado de pedido - id: {}, nuevo estado: {}", id, newStatus);
+
         // 1. BUSCAR EL PEDIDO O LANZAR EXCEPCION
         Order order = orderRepository
                             .findById(id)
@@ -158,14 +177,19 @@ public class OrderServiceImpl implements OrderService
                      || (current == OrderStatus.PAID    && newStatus == OrderStatus.SHIPPED)
                      || (current == OrderStatus.PAID    && newStatus == OrderStatus.CANCELLED);
 
-        if (!valid)
+        if (!valid) 
+        {
+            log.warn("Transición de estado inválida - pedido: {}, estado actual: {}, estado solicitado: {}", 
+                id, current, newStatus);
             throw new InvalidOperationException(
                 "Transición de estado no permitida: " + current + " → " + newStatus);
+        }
 
         
         // 3. SI SE CANCELA DESHACER EL STOCK
         if (newStatus == OrderStatus.CANCELLED)
         {
+            log.info("Cancelando pedido - restaurando stock de {} items", order.getItems().size());
             for (OrderItem item : order.getItems())
             {
                 Product product = item.getProduct();
@@ -178,8 +202,9 @@ public class OrderServiceImpl implements OrderService
         order.setStatus(newStatus);
 
         // 4. PERSISTIR Y DEVOLVER
-        return orderRepository.save(order);
+        Order updated = orderRepository.save(order);
+        log.info("Estado de pedido actualizado exitosamente - id: {}, estado: {}", updated.getId(), updated.getStatus());
+        
+        return (updated);
     }
 }
-
-
