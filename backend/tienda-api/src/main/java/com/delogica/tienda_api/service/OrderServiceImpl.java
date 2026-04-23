@@ -4,6 +4,9 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -15,9 +18,11 @@ import com.delogica.tienda_api.domain.OrderStatus;
 import com.delogica.tienda_api.domain.Product;
 import com.delogica.tienda_api.dto.request.OrderItemRequestDto;
 import com.delogica.tienda_api.dto.request.OrderRequestDto;
+import com.delogica.tienda_api.dto.response.OrderResponseDto;
 import com.delogica.tienda_api.exception.ConflictException;
 import com.delogica.tienda_api.exception.InvalidOperationException;
 import com.delogica.tienda_api.exception.ResourceNotFoundException;
+import com.delogica.tienda_api.mapper.OrderMapper;
 import com.delogica.tienda_api.repository.AddressRepository;
 import com.delogica.tienda_api.repository.CustomerRepository;
 import com.delogica.tienda_api.repository.OrderRepository;
@@ -34,6 +39,8 @@ public class OrderServiceImpl implements OrderService
     private final CustomerRepository    customerRepository;
     private final AddressRepository     addressRepository;
     private final ProductRepository     productRepository;
+
+    private final OrderMapper           orderMapper;
 
     @Override
     @Transactional
@@ -117,22 +124,17 @@ public class OrderServiceImpl implements OrderService
 
     @Override
     @Transactional(readOnly = true)
-    public List<Order> findAll()
+    public Page<OrderResponseDto> findAll(Long customerId, OrderStatus status, Pageable pageable)
     {
-        // 1. LISTAR TODOS
-        return orderRepository.findAll();
-    }
+        // 1. OBTENER PAGE CON FILTROS
+        Page<Order> page = orderRepository.finByFilters(customerId, status, pageable);
 
-    @Override
-    @Transactional(readOnly = true)
-    public List<Order> findByCustomerId(Long customerId)
-    {
-        // 1. VALIDAR QUE EL CLIENTE EXISTE
-        if (!customerRepository.existsById(customerId))
-            throw new ResourceNotFoundException("Cliente no encontrado: " + customerId);
-
-        // 2. LISTAR PEDIDOS DEL CLIENTE
-        return orderRepository.findByCustomerId(customerId);
+        // 2. CONVERTIR A DTO
+        List<OrderResponseDto> dtos = page.getContent()
+                                        .stream()
+                                        .map(order -> orderMapper.toResponseDto(order))
+                                        .toList();
+        return (new PageImpl<>(dtos, pageable, page.getTotalElements()));
     }
 
     @Override
