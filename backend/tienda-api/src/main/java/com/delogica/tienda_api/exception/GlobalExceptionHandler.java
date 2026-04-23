@@ -43,7 +43,7 @@ public class GlobalExceptionHandler
         return (new ResponseEntity<>(body, HttpStatus.BAD_REQUEST));
     }
 
-    // 403 - FORBIDEN
+    // 400 - OPERACION INVALIDA
     @ExceptionHandler(InvalidOperationException.class)
     public ResponseEntity<Object> handleInvalidOperationException(InvalidOperationException ex, HttpServletRequest request)
     {
@@ -53,7 +53,7 @@ public class GlobalExceptionHandler
         body.put("path", request.getRequestURI());
         body.put("status", HttpStatus.BAD_REQUEST.value());
         body.put("error", "Bad Request");
-        body.put("code", "FORBIDDEN");
+        body.put("code", "INVALID_OPERATION");
         body.put("message", ex.getMessage());
 
         return (new ResponseEntity<>(body, HttpStatus.BAD_REQUEST));
