@@ -10,6 +10,7 @@ public interface OrderService
 {
     Order       save(OrderRequestDto dto);
     Order       findById(Long id);
+    List<Order> findByCustomerId(Long customerId);
     List<Order> findAll();
     Order       updateStatus(Long id, OrderStatus newStatus);
 }

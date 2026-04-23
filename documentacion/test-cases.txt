@@ -63,4 +63,38 @@ PUT /api/customers/{id}/addresses/{addressId}/default
   404 → cliente no existe
   400 → dirección no pertenece al cliente
 
-═══════════════════════════════════════════
+───────────────────────────────────────────
+ORDERS
+───────────────────────────────────────────
+POST /api/orders
+  201 → pedido creado correctamente
+  400 → campos obligatorios vacíos (customerId, shippingAddressId, items)
+  400 → items vacío []
+  404 → customerId no existe
+  404 → shippingAddressId no existe
+  400 → dirección no pertenece al cliente
+  404 → productId no existe
+  400 → producto inactivo
+  409 → stock insuficiente
+
+GET /api/orders
+  200 → lista de pedidos (puede estar vacía)
+
+GET /api/orders/{id}
+  200 → pedido encontrado con sus items
+  404 → id no existe
+
+GET /api/orders/customer/{customerId}
+  200 → lista de pedidos del cliente
+  404 → cliente no existe
+
+PUT /api/orders/{id}/status
+  200 → CREATED  → PAID        (válida)
+  200 → CREATED  → CANCELLED   (válida)
+  200 → PAID     → SHIPPED     (válida)
+  200 → PAID     → CANCELLED   (válida)
+  400 → SHIPPED  → cualquiera  (inválida)
+  400 → CANCELLED → cualquiera (inválida)
+  400 → CREATED  → SHIPPED     (inválida)
+  400 → PAID     → CREATED     (inválida)
+  404 → id no existe
