@@ -29,7 +29,7 @@
     </root>
 
     <!-- LOGGER ESPECÍFICO: Solo para tu código -->
-    <logger name="com.gestion.eventos" level="DEBUG" additivity="false">
+    <logger name="com.delogica.tienda_api" level="DEBUG" additivity="false">
         <appender-ref ref="CONSOLE"/>
         <appender-ref ref="FILE"/>
     </logger>
