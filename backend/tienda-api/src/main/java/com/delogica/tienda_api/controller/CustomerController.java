@@ -1,7 +1,8 @@
 package com.delogica.tienda_api.controller;
 
-import java.util.List;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -11,6 +12,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.delogica.tienda_api.domain.Address;
@@ -68,13 +70,13 @@ public class CustomerController
 
     // 3. READ ALL
     @GetMapping
-    public ResponseEntity<List<CustomerResponseDto>> getAll()
+    public ResponseEntity<Page<CustomerResponseDto>> getAll(
+            @RequestParam(required = false) String email,
+            @RequestParam(defaultValue = "0") Pageable pageable
+    )
     {
-        // 1. OBTENER LISTA DE ENTITIES
-        List<Customer> customers = customerService.findAll();
-
-        // 2. MAPEAR LISTA A DTO
-        List<CustomerResponseDto> response = customerMapper.toResponseDtoList(customers);
+        // 1. OBTENER PAGE DE SERVICE
+        Page<CustomerResponseDto> response = customerService.findAll(email, pageable);
 
         // 3. RESPONDER
         return (new ResponseEntity<>(response, HttpStatus.OK));

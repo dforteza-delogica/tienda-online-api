@@ -2,6 +2,7 @@ package com.delogica.tienda_api.controller;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.delogica.tienda_api.dto.response.OrderResponseDto;
@@ -10,8 +11,10 @@ import com.delogica.tienda_api.service.interfaces.OrderService;
 
 import lombok.RequiredArgsConstructor;
 
-import java.util.List;
-
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -21,6 +24,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 
 
 import com.delogica.tienda_api.domain.Order;
+import com.delogica.tienda_api.domain.OrderStatus;
 import com.delogica.tienda_api.dto.request.OrderRequestDto;
 import com.delogica.tienda_api.dto.request.OrderStatusRequestDto;
 
@@ -69,30 +73,19 @@ public class OrderController
     // 3. READ ALL
     // GET /api/orders
     @GetMapping
-    public ResponseEntity<List<OrderResponseDto>> getAll()
+    public ResponseEntity<Page<OrderResponseDto>> getAll(
+            @RequestParam(required = false) Long customerId,
+            @RequestParam(required = false) OrderStatus status,
+            @PageableDefault(
+                page = 0, size = 10,
+                sort = "orderDate", direction = Sort.Direction.DESC
+            ) Pageable pageable
+    )
     {
-        // 1. OBTENER LISTA
-        List<Order> orders = orderService.findAll();
+        // 1. OBTENER PAGE
+        Page<OrderResponseDto> response = orderService.findAll(customerId, status, pageable);
 
-        // 2. MAPEAR LISTA A DTO
-        List<OrderResponseDto> response = orderMapper.toResponseDtoList(orders);
-
-        // 3. RESPONDER 200
-        return new ResponseEntity<>(response, HttpStatus.OK);
-    }
-
-    // 4. READ BY CUSTOMER
-    // GET /api/orders/customer/{customerId}
-    @GetMapping("/customer/{customerId}")
-    public ResponseEntity<List<OrderResponseDto>> getByCustomer(@PathVariable Long customerId)
-    {
-        // 1. OBTENER LISTA DEL CLIENTE
-        List<Order> orders = orderService.findByCustomerId(customerId);
-
-        // 2. MAPEAR LISTA A DTO
-        List<OrderResponseDto> response = orderMapper.toResponseDtoList(orders);
-
-        // 3. RESPONDER 200
+        // 2. RESPONDER 200
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
 

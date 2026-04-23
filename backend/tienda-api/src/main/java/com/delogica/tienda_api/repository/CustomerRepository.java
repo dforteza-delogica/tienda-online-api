@@ -2,6 +2,8 @@ package com.delogica.tienda_api.repository;
 
 import java.util.Optional;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -18,4 +20,10 @@ public interface CustomerRepository extends JpaRepository<Customer, Long>
     // Endpoint: GET /api/customers/email/{email}
     // Sql: SELECT * FROM customer WHERE email = :email
     Optional<Customer> findByEmail(String email);
+
+    // Sin filtros
+    Page<Customer> findAll(Pageable pageable);
+
+    // Con filtro por email
+    Page<Customer> findByEmailContainingIgnoreCase(String email, Pageable pageable);
 }
