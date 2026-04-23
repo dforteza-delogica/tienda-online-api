@@ -1,8 +1,9 @@
 package com.delogica.tienda_api.repository;
 
-import java.util.List;
 import java.util.Optional;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -21,5 +22,7 @@ public interface ProductRepository extends JpaRepository<Product, Long>
 
     // Endpoint:    GET /api/products
     // Sql:         SELECT * FROM product WHERE active = true
-    List<Product> findByActiveTrue();
+    Page<Product> findByActiveTrue(Pageable pageable);
+
+    Page<Product> findByNameContainingIgnoreCaseAndActiveTrue(String name, Pageable pageable);
 }
