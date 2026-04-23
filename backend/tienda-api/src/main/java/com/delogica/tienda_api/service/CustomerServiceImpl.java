@@ -2,14 +2,19 @@ package com.delogica.tienda_api.service;
 
 import java.util.List;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.delogica.tienda_api.domain.Address;
 import com.delogica.tienda_api.domain.Customer;
+import com.delogica.tienda_api.dto.response.CustomerResponseDto;
 import com.delogica.tienda_api.exception.ConflictException;
 import com.delogica.tienda_api.exception.InvalidOperationException;
 import com.delogica.tienda_api.exception.ResourceNotFoundException;
+import com.delogica.tienda_api.mapper.CustomerMapper;
 import com.delogica.tienda_api.repository.AddressRepository;
 import com.delogica.tienda_api.repository.CustomerRepository;
 import com.delogica.tienda_api.service.interfaces.CustomerService;
@@ -22,6 +27,7 @@ public class CustomerServiceImpl implements CustomerService
 {
     private final CustomerRepository    customerRepository;
     private final AddressRepository     addressRepository;
+    private final CustomerMapper        customerMapper; 
 
     @Override
     @Transactional(readOnly = true)
@@ -35,10 +41,24 @@ public class CustomerServiceImpl implements CustomerService
 
     @Override
     @Transactional(readOnly = true)
-    public List<Customer> findAll()
+    public Page<CustomerResponseDto> findAll(String email, Pageable pageable)
     {
-        // 1. LISTAR TODOS
-        return (customerRepository.findAll());
+        Page<Customer> page;
+
+        // 1. OBTENER PAGE SEGÚN FILTROS
+        if (email != null && !email.isEmpty())
+            page = customerRepository.findByEmailContainingIgnoreCase(email, pageable);
+        else
+            page = customerRepository.findAll(pageable);
+
+        // 2. CONVERTIR A DTO
+        List<CustomerResponseDto> dtos = page.getContent()
+                .stream()
+                .map((customer) -> customerMapper.toResponseDto(customer))
+                .toList();
+
+        // 3. DEVOLVER PAGE CON DTOs
+        return (new PageImpl<>(dtos, pageable, page.getTotalElements()));
     }
 
     @Override

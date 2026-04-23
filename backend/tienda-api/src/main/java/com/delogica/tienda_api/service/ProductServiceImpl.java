@@ -34,13 +34,14 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Page<ProductResponseDto> findAll(String name, Pageable pageable) 
     {
 
         // 1. OBTENER PAGE SEGÚN FILTROS
         Page<Product> page;
 
-        if (name != null && !name.trim().isEmpty()) {
+        if (name != null && !name.isEmpty()) {
             page = repository.findByNameContainingIgnoreCaseAndActiveTrue(name, pageable);
         } else {
             page = repository.findByActiveTrue(pageable);
