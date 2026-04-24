@@ -72,7 +72,7 @@ public class CustomerController
     @GetMapping
     public ResponseEntity<Page<CustomerResponseDto>> getAll(
             @RequestParam(required = false) String email,
-            @RequestParam Pageable pageable
+            Pageable pageable
     )
     {
         // 1. OBTENER PAGE DE SERVICE

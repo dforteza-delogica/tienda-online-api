@@ -140,8 +140,11 @@ public class OrderServiceImpl implements OrderService
     @Transactional(readOnly = true)
     public Page<OrderResponseDto> findAll(Long customerId, OrderStatus status, Pageable pageable)
     {
-        log.debug("Listando pedidos - cliente: {}, estado: {}, página: {}", 
+        log.debug("Listando pedidos - cliente: {}, estado: {}, página: {}",
             customerId, status, pageable.getPageNumber());
+
+        if (customerId != null && !customerRepository.existsById(customerId))
+            throw new ResourceNotFoundException("Cliente no encontrado: " + customerId);
 
         // 1. OBTENER PAGE CON FILTROS
         Page<Order> page = orderRepository.finByFilters(customerId, status, pageable);
