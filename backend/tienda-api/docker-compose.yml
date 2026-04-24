@@ -7,8 +7,6 @@ services:
       MYSQL_DATABASE: shopdb
     ports:
       - "3307:3306"
-    volumes:
-      - mysql-data:/var/lib/mysql
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
       interval: 10s
@@ -28,5 +26,3 @@ services:
       mysql:
         condition: service_healthy
 
-volumes:
-  mysql-data:
