@@ -6,7 +6,7 @@
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
 		<version>3.5.13</version>
-		<relativePath/> <!-- lookup parent from repository -->
+		<relativePath/>
 	</parent>
 	<groupId>com.delogica</groupId>
 	<artifactId>tienda-api</artifactId>
@@ -69,6 +69,13 @@
 			<scope>test</scope>
 		</dependency>
 
+		<!-- H2 DATABASE (TEST) -->
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <scope>test</scope>
+        </dependency>
+
 		<!-- MAPSTRUCT -->
 	    <dependency>
 			<groupId>org.mapstruct</groupId>
@@ -108,6 +115,30 @@
 					</excludes>
 				</configuration>
 			</plugin>
+
+			<!-- JACOCO -->
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <version>0.8.12</version>
+                <executions>
+                    <!-- instrumenta la JVM antes de ejecutar los tests -->
+                    <execution>
+                        <id>prepare-agent</id>
+                        <goals>
+                            <goal>prepare-agent</goal>
+                        </goals>
+                    </execution>
+                    <!-- genera el informe HTML/XML al hacer verify -->
+                    <execution>
+                        <id>report</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>report</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
 
 			<!-- MAVEN COMPILER PLUGIN -->
 			<plugin>
@@ -181,6 +212,7 @@
 					</execution>
 				</executions>
 			</plugin>
+
 		</plugins>
 	</build>
 
