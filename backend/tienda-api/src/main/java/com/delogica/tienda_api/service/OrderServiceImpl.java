@@ -147,7 +147,7 @@ public class OrderServiceImpl implements OrderService
             throw new ResourceNotFoundException("Cliente no encontrado: " + customerId);
 
         // 1. OBTENER PAGE CON FILTROS
-        Page<Order> page = orderRepository.finByFilters(customerId, status, pageable);
+        Page<Order> page = orderRepository.findByFilters(customerId, status, pageable);
 
         // 2. CONVERTIR A DTO
         List<OrderResponseDto> dtos = page.getContent()
