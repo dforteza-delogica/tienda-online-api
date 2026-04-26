@@ -61,10 +61,10 @@ public class ProductServiceImpl implements ProductService
                 .toList();
 
         // 3. DEVOLVER PAGE CON DTOs
-        return (new PageImpl<ProductResponseDto>(
-        dtos,
-        pageable,
-        page.getTotalElements())
+        return (new PageImpl<>(
+                    dtos,
+                    pageable,
+                    page.getTotalElements())
         );
     }
 
@@ -73,13 +73,15 @@ public class ProductServiceImpl implements ProductService
     public Product save(Product product) 
     {
         log.info("Creando producto con SKU: {}", product.getSku());
-        
+
+        // 1. VALIDAR SKKU
         if (repository.existsBySku(product.getSku())) 
         {
             log.warn("Intento de crear producto con SKU duplicado: {}", product.getSku());
             throw new ConflictException("El producto con SKU: " + product.getSku() + " ya existe");
         }
 
+        // 2. PERSISTIR
         Product saved = repository.save(product);
         log.info("Producto creado exitosamente - id: {}, SKU: {}", saved.getId(), saved.getSku());
         
@@ -88,28 +90,14 @@ public class ProductServiceImpl implements ProductService
 
     @Override
     @Transactional
-    public Product update(Product product) 
+    public Product update(Product product)
     {
-        log.info("Actualizando producto id: {}", product.getId());
-        
-        // 1. VALIDAR QUE EXISTE Y ESTA ACTIVO
-        Product existing = repository
-                .findByIdAndActiveTrue(product.getId())
-                .orElseThrow(
-                        () -> new ResourceNotFoundException("Producto no encontrado o inactivo: " + product.getId()));
-
-        // 2. UPDATE CAMPOS PERMITIDOS
-        existing.setName(product.getName());
-        existing.setDescription(product.getDescription());
-        existing.setPrice(product.getPrice());
-        existing.setStock(product.getStock());
-
-        // 3. UPDATE CAMBIOS
-        Product updated = repository.save(existing);
+        Product updated = repository.save(product);
         log.info("Producto actualizado exitosamente - id: {}", updated.getId());
         
         return (updated);
     }
+
 
     @Override
     @Transactional
@@ -119,8 +107,8 @@ public class ProductServiceImpl implements ProductService
         
         // 1. VALIDAR EXISTENCIA POR ID
         Product product = repository
-                .findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Producto no encontrado: " + id));
+                .findByIdAndActiveTrue(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Producto no encontrado o inactivo: " + id));
         
         // 2. SOFT DELETE (INACTIVAR)
         product.setActive(false);

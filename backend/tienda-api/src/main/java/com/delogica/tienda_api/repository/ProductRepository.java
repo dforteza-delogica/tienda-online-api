@@ -12,7 +12,6 @@ import com.delogica.tienda_api.domain.Product;
 @Repository
 public interface ProductRepository extends JpaRepository<Product, Long>
 {
-    // Endpoint:    GET /api/products/sku/{sku}
     // Sql:         SELECT * FROM product WHERE sku = :sku
     boolean existsBySku(String sku);
 
@@ -24,5 +23,7 @@ public interface ProductRepository extends JpaRepository<Product, Long>
     // Sql:         SELECT * FROM product WHERE active = true
     Page<Product> findByActiveTrue(Pageable pageable);
 
+    // Endpoint:    GET /api/products?name={name}
+    // Sql:         SELECT * FROM products WHERE LOWER(name) LIKE LOWER('%:name%') AND active = true
     Page<Product> findByNameContainingIgnoreCaseAndActiveTrue(String name, Pageable pageable);
 }

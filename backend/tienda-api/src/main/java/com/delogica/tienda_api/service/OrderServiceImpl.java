@@ -50,6 +50,8 @@ public class OrderServiceImpl implements OrderService
     {
         log.info("Creando pedido para cliente: {}, items: {}", dto.getCustomerId(), dto.getItems().size());
 
+        // ==== VALIDACIONES ====
+
         // 1. VALIDAR QUE EL CLIENTE EXISTE
         Customer customer = customerRepository
                                 .findById(dto.getCustomerId())
@@ -64,6 +66,8 @@ public class OrderServiceImpl implements OrderService
         if (!address.getCustomer().getId().equals(customer.getId()))
             throw new InvalidOperationException("La dirección " + dto.getAddressId() + " no pertenece al cliente " + dto.getCustomerId());
 
+        // ==== CREACION DE PEDIDO ====
+
         // 4. CREAR EL PEDIDO BASE
         Order order = new Order();
         order.setCustomer(customer);
@@ -71,6 +75,8 @@ public class OrderServiceImpl implements OrderService
         order.setStatus(OrderStatus.CREATED);
         order.setOrderDate(LocalDateTime.now());
         order.setTotal(BigDecimal.ZERO);
+        
+        // ==== ORDER ITEMS ====
 
         // 5. PROCESAR CADA ITEM DEL DTO
         for (OrderItemRequestDto itemDto : dto.getItems())
@@ -85,36 +91,43 @@ public class OrderServiceImpl implements OrderService
                 throw new InvalidOperationException("El producto no está activo: " + product.getId());
 
             // 5.3 VALIDAR STOCK SUFICIENTE
-            if (product.getStock() < itemDto.getQuantity()) {
+            if (product.getStock() < itemDto.getQuantity()) 
+            {
                 log.warn("Stock insuficiente - producto: {}, solicitado: {}, disponible: {}", 
                     product.getId(), itemDto.getQuantity(), product.getStock());
                 throw new ConflictException("Stock insuficiente en el producto "+product.getName() +" | Disponible:" + product.getStock());
             }
 
-            // 5.4 CAPTURAR PRECIO SNAPSHOT
-            BigDecimal unitPrice = product.getPrice();
 
-            // 5.5 CREAR EL ORDER ITEM
+            // 5.4 CREAR EL ORDER ITEM
             OrderItem item = new OrderItem();
             item.setOrder(order);
             item.setProduct(product);
             item.setQuantity(itemDto.getQuantity());
+            
+            BigDecimal unitPrice = product.getPrice();
             item.setUnitPrice(unitPrice);
                                         
-            // 5.6 AÑADIR EL ITEM AL PEDIDO
+            // 5.5 AÑADIR EL ITEM AL PEDIDO
             order.getItems().add(item);
 
             // DESCONTAR STOCK
             product.setStock(product.getStock() - itemDto.getQuantity());
+
             log.debug("Stock descontado - producto: {}, cantidad: {}, stock restante: {}", 
                 product.getId(), itemDto.getQuantity(), product.getStock());
         }
 
+        // === TOTAL ====
         // 6. CALCULAR TOTAL DEL PEDIDO
-        BigDecimal total = order.getItems()
-                                .stream()
-                                .map(i -> i.getUnitPrice().multiply(BigDecimal.valueOf(i.getQuantity())))
-                                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        BigDecimal total = BigDecimal.ZERO;
+        for (OrderItem i : order.getItems())
+        {
+            // NOTA: Quantity ES INTEGER
+            BigDecimal lineTotal = i.getUnitPrice().multiply(BigDecimal.valueOf(i.getQuantity()));
+            total = total.add(lineTotal);
+        }
         order.setTotal(total);
 
         // 7. PERSISTIR Y DEVOLVER
@@ -154,7 +167,11 @@ public class OrderServiceImpl implements OrderService
                                         .stream()
                                         .map(order -> orderMapper.toResponseDto(order))
                                         .toList();
-        return (new PageImpl<>(dtos, pageable, page.getTotalElements()));
+        return (new PageImpl<>(
+                        dtos,
+                        pageable,
+                        page.getTotalElements())
+        );
     }
 
     @Override
@@ -170,22 +187,22 @@ public class OrderServiceImpl implements OrderService
 
         // 2. VALIDAR LA TRANSICION DE ESTADO
         //    Transiciones válidas:
-        //    CREATED → PAID
-        //    CREATED → CANCELLED
-        //    PAID    → SHIPPED
-        //    PAID    → CANCELLED
+        //    CREATED -> PAID
+        //    CREATED -> CANCELLED
+        //    PAID    -> SHIPPED
+        //    PAID    -> CANCELLED
         OrderStatus current = order.getStatus();
-        boolean valid = (current == OrderStatus.CREATED && newStatus == OrderStatus.PAID)
-                     || (current == OrderStatus.CREATED && newStatus == OrderStatus.CANCELLED)
-                     || (current == OrderStatus.PAID    && newStatus == OrderStatus.SHIPPED)
-                     || (current == OrderStatus.PAID    && newStatus == OrderStatus.CANCELLED);
 
-        if (!valid) 
+        if (!(
+                (current == OrderStatus.CREATED && newStatus == OrderStatus.PAID)
+                || (current == OrderStatus.CREATED && newStatus == OrderStatus.CANCELLED)
+                || (current == OrderStatus.PAID    && newStatus == OrderStatus.SHIPPED)
+                || (current == OrderStatus.PAID    && newStatus == OrderStatus.CANCELLED))
+        ) 
         {
             log.warn("Transición de estado inválida - pedido: {}, estado actual: {}, estado solicitado: {}", 
                 id, current, newStatus);
-            throw new InvalidOperationException(
-                "Transición de estado no permitida: " + current + " → " + newStatus);
+            throw new InvalidOperationException("Transición de estado no permitida: " + current + " -> " + newStatus);
         }
 
         
@@ -195,8 +212,11 @@ public class OrderServiceImpl implements OrderService
             log.info("Cancelando pedido - restaurando stock de {} items", order.getItems().size());
             for (OrderItem item : order.getItems())
             {
+                // PRODUCTO
                 Product product = item.getProduct();
+                // RESTAURAR STOCK
                 product.setStock(product.getStock() + item.getQuantity());
+                // PERSISTIR
                 productRepository.save(product);
             }
         }

@@ -52,7 +52,7 @@ public class OrderController
         OrderResponseDto response = orderMapper.toResponseDto(saved);
 
         // 3. RESPONDER 201
-        return new ResponseEntity<>(response, HttpStatus.CREATED);
+        return (new ResponseEntity<>(response, HttpStatus.CREATED));
     }
 
     // 2. READ BY ID
@@ -67,7 +67,7 @@ public class OrderController
         OrderResponseDto response = orderMapper.toResponseDto(found);
 
         // 3. RESPONDER 200
-        return new ResponseEntity<>(response, HttpStatus.OK);
+        return (new ResponseEntity<>(response, HttpStatus.OK));
     }
 
     // 3. READ ALL
@@ -86,7 +86,7 @@ public class OrderController
         Page<OrderResponseDto> response = orderService.findAll(customerId, status, pageable);
 
         // 2. RESPONDER 200
-        return new ResponseEntity<>(response, HttpStatus.OK);
+        return (new ResponseEntity<>(response, HttpStatus.OK));
     }
 
     // 5. UPDATE STATUS
@@ -103,6 +103,6 @@ public class OrderController
         OrderResponseDto response = orderMapper.toResponseDto(updated);
 
         // 3. RESPONDER 200
-        return new ResponseEntity<>(response, HttpStatus.OK);
+        return (new ResponseEntity<>(response, HttpStatus.OK));
     }
 }
