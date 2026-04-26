@@ -1,0 +1,51 @@
+================================================================================
+                    PLAN DE TESTS UNITARIOS - TIENDA API
+================================================================================
+
+
+================================================================================
+SERVICE: ProductServiceImpl
+================================================================================
+
+save()
+  - SKU libre             -> devuelve producto, save() llamado 1 vez
+  - SKU duplicado         -> ConflictException, save() nunca llamado
+
+findById()
+  - ID existe y activo    -> devuelve producto
+  - ID no existe/inactivo -> ResourceNotFoundException
+
+deleteById()
+  - Producto existe       -> active = false, save() llamado 1 vez
+
+
+================================================================================
+SERVICE: CustomerServiceImpl
+================================================================================
+
+save()
+  - Email libre           -> devuelve cliente, save() llamado 1 vez
+  - Email duplicado       -> ConflictException, save() nunca llamado
+
+update()
+  - Email cambia y ya existe en otro cliente -> ConflictException, save() nunca llamado
+
+addAddress()
+  - Cliente existe        -> devuelve dirección asociada, save() llamado 1 vez
+  - Cliente no existe     -> ResourceNotFoundException, save() nunca llamado
+
+
+================================================================================
+SERVICE: OrderServiceImpl
+================================================================================
+
+save()
+  - Happy path                        -> total calculado (7.50 x 2 = 15.00), save() llamado 1 vez
+  - Cliente no existe                 -> ResourceNotFoundException, save() nunca llamado
+  - Dirección no pertenece al cliente -> InvalidOperationException, save() nunca llamado
+  - Stock insuficiente                -> ConflictException, save() nunca llamado
+
+updateStatus()
+  - CREATED -> PAID (válida)          -> status = PAID, save() llamado 1 vez
+  - SHIPPED -> CREATED (inválida)     -> InvalidOperationException, save() nunca llamado
+  - CREATED -> CANCELLED              -> stock restaurado (+cantidad), productRepository.save() llamado
