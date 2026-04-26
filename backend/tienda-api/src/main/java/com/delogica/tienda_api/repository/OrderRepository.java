@@ -17,6 +17,7 @@ public interface OrderRepository extends JpaRepository<Order, Long>
         // Endpoint:    GET /api/orders
         //                  ?customerId={customerId}
         //                  &status={status}
+        // NOTA: NO ELIMINAR NULL, ES FUNDAMENTAL, SI NO 500
         @Query(
         "SELECT o FROM Order o " +
         "WHERE (:customerId IS NULL OR o.customer.id = :customerId) " +
