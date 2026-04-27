@@ -45,7 +45,7 @@ public class OrderController
     @PostMapping
     public ResponseEntity<OrderResponseDto> create(@Valid @RequestBody OrderRequestDto dto)
     {
-        // 1. PERSISTIR EN SERVICE — el service recibe el DTO directamente
+        // 1. PERSISTIR EN SERVICE
         Order saved = orderService.save(dto);
 
         // 2. MAPEAR ENTITY A DTO

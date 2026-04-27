@@ -7,5 +7,4 @@
 - **Addresses separadas del customer**: se añaden tras la creación con `POST /api/customers/{id}/addresses`. El mapper ignora `addresses` en create y update.
 - **Una sola dirección por defecto**: al marcar una como default, `clearDefaultByCustomerId` pone `isDefault = false` en todas las del cliente antes con un UPDATE directo en BD.
 - **`@Modifying` + `@Transactional` en el repository**: necesario para ejecutar el UPDATE de `clearDefaultByCustomerId` fuera del flujo estándar de JPA.
-- **Validación de pertenencia en `setDefaultAddress`**: se usa `findByIdAndCustomerId` — una sola query que valida existencia y pertenencia a la vez.
 - **Paginación con filtro por email**: `findAll` acepta `?email=` opcional. Sin filtro devuelve todos los clientes paginados.
