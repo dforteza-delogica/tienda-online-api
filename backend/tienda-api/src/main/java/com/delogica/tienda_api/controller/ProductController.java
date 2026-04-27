@@ -33,81 +33,54 @@ public class ProductController
     private final ProductService    productService;
     private final ProductMapper     productMapper;
 
-    // 1. CREATE
     @PostMapping
     public ResponseEntity<ProductResponseDto> create(@Valid @RequestBody ProductRequestDto dto)
     {
-        // 1. MAPEAR DTO A ENTITY
         Product toCreate = productMapper.toEntity(dto);
-
-        // 2. PERSISTIR EN SERVICE
         Product saved = productService.save(toCreate);
-
-        // 3. MAPEAR ENTITY A DTO
         ProductResponseDto response = productMapper.toResponseDto(saved);
 
-        // 4. RESPONDER
-        return (new ResponseEntity<>(response, HttpStatus.CREATED));
+        return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
 
-    // 2. READ BY ID
     @GetMapping("/{id}")
     public ResponseEntity<ProductResponseDto> getById(@PathVariable Long id)
     {
-        // 1. BUSCAR ENTITY EN SERVICE
         Product found = productService.findById(id);
-
-        // 2. MAPEAR ENTITY A DTO
         ProductResponseDto response = productMapper.toResponseDto(found);
 
-        // 3. RESPONDER
-        return (new ResponseEntity<>(response, HttpStatus.OK));
+        return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
-    // 3. READ ALL
     @GetMapping
     public ResponseEntity<Page<ProductResponseDto>> getAll(
         @RequestParam(required = false) String name,
         @PageableDefault(page = 0, size = 10, sort = "name") Pageable pageable
     )
     {
-        // 1. OBTENER PAGE
         Page<ProductResponseDto> response = productService.findAll(name, pageable); 
 
-        // 2. RESPONDER
-        return (new ResponseEntity<>(response, HttpStatus.OK));
+        return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
-    // 4. UPDATE
     @PutMapping("/{id}")
     public ResponseEntity<ProductResponseDto> update(
             @PathVariable Long id,
             @Valid @RequestBody ProductUpdateDto dto)
     {
-        // 1. CARGAR ENTITY ACTUAL
         Product existing = productService.findById(id);
-
-        // 2. APLICAR CAMBIOS CON MAPPER
         productMapper.updateProductFromDto(dto, existing);
-
-        // 3. PERSISTIR EN SERVICE
         Product updated = productService.update(existing);
-
-        // 4. MAPEAR ENTITY A DTO
         ProductResponseDto response = productMapper.toResponseDto(updated);
 
-        // 5. RESPONDER
-        return (new ResponseEntity<>(response, HttpStatus.OK));
+        return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
-    // 5. DELETE
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable Long id)
     {
-        // 1. ELIMINAR EN SERVICE
         productService.deleteById(id);
 
-        // 2. RESPONDER SIN CONTENIDO
-        return (new ResponseEntity<>(HttpStatus.NO_CONTENT));
+        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
 }

@@ -35,35 +35,31 @@ public class CustomerServiceImpl implements CustomerService
     @Transactional(readOnly = true)
     public Customer findById(Long id)
     {
-        log.debug("Buscando cliente por id: {}", id);
+        log.debug("Finding customer by id: {}", id);
 
-        // 1. DEVOLVER CLIENTE
         return (customerRepository
-                    .findById(id)
-                    .orElseThrow(() -> new ResourceNotFoundException("Cliente no encontrado: " + id)));
+                .findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Customer not found: " + id)));
     }
 
     @Override
     @Transactional(readOnly = true)
     public Page<CustomerResponseDto> findAll(String email, Pageable pageable)
     {
-        log.debug("Listando clientes - filtro email: {}, página: {}", email, pageable.getPageNumber());
+        log.debug("Listing customers - email filter: {}, page: {}", email, pageable.getPageNumber());
 
         Page<Customer> page;
 
-        // 1. OBTENER PAGE SEGÚN FILTROS
         if (email != null && !email.isEmpty())
             page = customerRepository.findByEmailContainingIgnoreCase(email, pageable);
         else
             page = customerRepository.findAll(pageable);
 
-        // 2. CONVERTIR A DTO
         List<CustomerResponseDto> dtos = page.getContent()
                 .stream()
-                .map((customer) -> customerMapper.toResponseDto(customer))
+                .map(customerMapper::toResponseDto)
                 .toList();
 
-        // 3. DEVOLVER PAGE CON DTOs
         return (new PageImpl<>(dtos, pageable, page.getTotalElements()));
     }
 
@@ -71,18 +67,16 @@ public class CustomerServiceImpl implements CustomerService
     @Transactional
     public Customer save(Customer customer)
     {
-        log.info("Creando cliente con email: {}", customer.getEmail());
+        log.info("Creating customer with email: {}", customer.getEmail());
 
-        // 1. VALIDAR QUE EL EMAIL NO EXISTE
         if (customerRepository.existsByEmail(customer.getEmail())) 
-            {
-            log.warn("Intento de crear cliente con email duplicado: {}", customer.getEmail());
-            throw new ConflictException("Ya existe un cliente con el email: " + customer.getEmail());
+        {
+            log.error("Attempt to create customer with duplicate email: {}", customer.getEmail());
+            throw new ConflictException("Customer with email already exists: " + customer.getEmail());
         }
 
-        // 2. PERSISTIR Y DEVOLVER
         Customer saved = customerRepository.save(customer);
-        log.info("Cliente creado exitosamente - id: {}, email: {}", saved.getId(), saved.getEmail());
+        log.info("Customer created successfully - id: {}, email: {}", saved.getId(), saved.getEmail());
         
         return (saved);
     }
@@ -91,23 +85,20 @@ public class CustomerServiceImpl implements CustomerService
     @Transactional
     public Customer update(Customer customer)
     {
-        log.info("Actualizando cliente id: {}", customer.getId());
+        log.info("Updating customer id: {}", customer.getId());
 
-        // 1. VALIDAR EMAIL NO DUPLICADO
-        // Si email actualizado && email ya existe en otro cliente
         Customer existing = customerRepository
-                                .findById(customer.getId())
-                                .orElseThrow(() -> new ResourceNotFoundException("Cliente no encontrado: " + customer.getId()));
+                .findById(customer.getId())
+                .orElseThrow(() -> new ResourceNotFoundException("Customer not found: " + customer.getId()));
 
         if (!existing.getEmail().equals(customer.getEmail()) && customerRepository.existsByEmail(customer.getEmail())) 
         {
-            log.warn("Intento de actualizar cliente con email duplicado: {}", customer.getEmail());
-            throw new ConflictException("Ya existe un cliente con el email: " + customer.getEmail());
+            log.error("Attempt to update customer with duplicate email: {}", customer.getEmail());
+            throw new ConflictException("Customer with email already exists: " + customer.getEmail());
         }
 
-        // 2. PERSISTIR Y DEVOLVER
         Customer updated = customerRepository.save(customer);
-        log.info("Cliente actualizado exitosamente - id: {}", updated.getId());
+        log.info("Customer updated successfully - id: {}", updated.getId());
         
         return (updated);
     }
@@ -116,45 +107,38 @@ public class CustomerServiceImpl implements CustomerService
     @Transactional
     public void deleteById(Long id)
     {
-        log.info("Eliminando cliente id: {}", id);
+        log.info("Deleting customer id: {}", id);
 
-        // 1. VALIDAR EXISTENCIA
         if (!customerRepository.existsById(id))
-            throw new ResourceNotFoundException("Cliente no encontrado: " + id);
+            throw new ResourceNotFoundException("Customer not found: " + id);
 
-        // 2. ELIMINAR
         customerRepository.deleteById(id);
-        log.info("Cliente eliminado exitosamente - id: {}", id);
+        log.info("Customer deleted successfully - id: {}", id);
     }
 
     @Override
     @Transactional
     public Address addAddress(Long customerId, Address address)
     {
-        log.info("Añadiendo dirección a cliente: {}, isDefault: {}", customerId, address.getIsDefault());
+        log.info("Adding address to customer: {}, isDefault: {}", customerId, address.getIsDefault());
 
-        // 1. VALIDAR QUE EL CLIENTE EXISTE
         Customer customer = customerRepository
-                                .findById(customerId)
-                                .orElseThrow(() -> new ResourceNotFoundException("Cliente no encontrado: " + customerId));
+                .findById(customerId)
+                .orElseThrow(() -> new ResourceNotFoundException("Customer not found: " + customerId));
         
-        // 2. GARANTIZAR QUE isDefault NO es NULL
         if (address.getIsDefault() == null) 
             address.setIsDefault(false);
 
-        // 3. SI ES DEFAULT, LIMPIAR DEFAULT ANTERIOR
         if (address.getIsDefault()) 
         {
-            log.debug("Limpiando dirección por defecto anterior del cliente: {}", customerId);
+            log.debug("Clearing previous default address for customer: {}", customerId);
             addressRepository.clearDefaultByCustomerId(customerId);
         }
 
-        // 4. ASOCIAR CON EL CLIENTE
         address.setCustomer(customer);
 
-        // 5. PERSISTIR Y DEVOLVER
         Address saved = addressRepository.save(address);
-        log.info("Dirección añadida exitosamente - id: {}, cliente: {}", saved.getId(), customerId);
+        log.info("Address added successfully - id: {}, customer: {}", saved.getId(), customerId);
         
         return (saved);
     }
@@ -163,31 +147,25 @@ public class CustomerServiceImpl implements CustomerService
     @Transactional
     public Address setDefaultAddress(Long customerId, Long addressId)
     {
-        log.info("Estableciendo dirección por defecto - cliente: {}, dirección: {}", customerId, addressId);
+        log.info("Setting default address - customer: {}, address: {}", customerId, addressId);
 
-        // 1. VALIDAR QUE EL CLIENTE EXISTE
         customerRepository
                 .findById(customerId)
-                .orElseThrow(() -> new ResourceNotFoundException("Cliente no encontrado: " + customerId));
+                .orElseThrow(() -> new ResourceNotFoundException("Customer not found: " + customerId));
 
-        // 2. VALIDAR QUE LA DIRECCION EXISTE
         Address address = addressRepository
-                                .findById(addressId)
-                                .orElseThrow(() -> new ResourceNotFoundException("Dirección no encontrada: " + addressId));
+                .findById(addressId)
+                .orElseThrow(() -> new ResourceNotFoundException("Address not found: " + addressId));
 
-        // 3. VALIDAR QUE PERTENECE AL CLIENTE
         if (!address.getCustomer().getId().equals(customerId))
-            throw new InvalidOperationException("La dirección " + addressId + " no pertenece al cliente " + customerId);
+            throw new InvalidOperationException("Address " + addressId + " does not belong to customer " + customerId);
 
-        // 3. LIMPIAR DEFAULT ANTERIOR
         addressRepository.clearDefaultByCustomerId(customerId);
 
-        // 4. MARCAR COMO DEFAULT
         address.setIsDefault(true);
 
-        // 5. PERSISTIR Y DEVOLVER
         Address updated = addressRepository.save(address);
-        log.info("Dirección establecida como por defecto exitosamente - id: {}, cliente: {}", addressId, customerId);
+        log.info("Address set as default successfully - id: {}, customer: {}", addressId, customerId);
         
         return (updated);
     }

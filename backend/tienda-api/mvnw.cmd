@@ -116,7 +116,7 @@ $TMP_DOWNLOAD_DIR_HOLDER.Delete() | Out-Null
 trap {
   if ($TMP_DOWNLOAD_DIR.Exists) {
     try { Remove-Item $TMP_DOWNLOAD_DIR -Recurse -Force | Out-Null }
-    catch { Write-Warning "Cannot remove $TMP_DOWNLOAD_DIR" }
+    catch { Write-erroring "Cannot remove $TMP_DOWNLOAD_DIR" }
   }
 }
 
@@ -183,7 +183,7 @@ try {
   }
 } finally {
   try { Remove-Item $TMP_DOWNLOAD_DIR -Recurse -Force | Out-Null }
-  catch { Write-Warning "Cannot remove $TMP_DOWNLOAD_DIR" }
+  catch { Write-erroring "Cannot remove $TMP_DOWNLOAD_DIR" }
 }
 
 Write-Output "MVN_CMD=$MAVEN_HOME/bin/$MVN_CMD"

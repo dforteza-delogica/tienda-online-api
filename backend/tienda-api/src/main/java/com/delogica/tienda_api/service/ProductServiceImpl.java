@@ -31,22 +31,19 @@ public class ProductServiceImpl implements ProductService
     @Transactional(readOnly = true)
     public Product findById(Long id) 
     {
-        log.debug("Buscando producto por id: {}", id);
+        log.debug("Finding product by id: {}", id);
         
-        Product product = repository
+        return repository
                 .findByIdAndActiveTrue(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Producto no encontrado o inactivo: " + id));
-        
-        return (product);
+                .orElseThrow(() -> new ResourceNotFoundException("Product not found or inactive: " + id));
     }
 
     @Override
     @Transactional(readOnly = true)
     public Page<ProductResponseDto> findAll(String name, Pageable pageable) 
     {
-        log.debug("Listando productos - filtro nombre: {}, página: {}", name, pageable.getPageNumber());
+        log.debug("Listing products - name filter: {}, page: {}", name, pageable.getPageNumber());
 
-        // 1. OBTENER PAGE SEGÚN FILTROS
         Page<Product> page;
 
         if (name != null && !name.isEmpty())
@@ -54,38 +51,30 @@ public class ProductServiceImpl implements ProductService
         else
             page = repository.findByActiveTrue(pageable);
 
-        // 2. CONVERTIR A DTO
         List<ProductResponseDto> dtos = page.getContent()
                 .stream()
-                .map((product) -> productMapper.toResponseDto(product))
+                .map(productMapper::toResponseDto)
                 .toList();
 
-        // 3. DEVOLVER PAGE CON DTOs
-        return (new PageImpl<>(
-                    dtos,
-                    pageable,
-                    page.getTotalElements())
-        );
+        return new PageImpl<>(dtos, pageable, page.getTotalElements());
     }
 
     @Override
     @Transactional
     public Product save(Product product) 
     {
-        log.info("Creando producto con SKU: {}", product.getSku());
+        log.info("Creating product with SKU: {}", product.getSku());
 
-        // 1. VALIDAR SKKU
         if (repository.existsBySku(product.getSku())) 
         {
-            log.warn("Intento de crear producto con SKU duplicado: {}", product.getSku());
-            throw new ConflictException("El producto con SKU: " + product.getSku() + " ya existe");
+            log.error("Attempt to create product with duplicate SKU: {}", product.getSku());
+            throw new ConflictException("Product with SKU: " + product.getSku() + " already exists");
         }
 
-        // 2. PERSISTIR
         Product saved = repository.save(product);
-        log.info("Producto creado exitosamente - id: {}, SKU: {}", saved.getId(), saved.getSku());
+        log.info("Product created successfully - id: {}, SKU: {}", saved.getId(), saved.getSku());
         
-        return (saved);
+        return saved;
     }
 
     @Override
@@ -93,29 +82,24 @@ public class ProductServiceImpl implements ProductService
     public Product update(Product product)
     {
         Product updated = repository.save(product);
-        log.info("Producto actualizado exitosamente - id: {}", updated.getId());
+        log.info("Product updated successfully - id: {}", updated.getId());
         
-        return (updated);
+        return updated;
     }
-
 
     @Override
     @Transactional
     public void deleteById(Long id) 
     {
-        log.info("Eliminando (soft delete) producto id: {}", id);
+        log.info("Soft deleting product id: {}", id);
         
-        // 1. VALIDAR EXISTENCIA POR ID
         Product product = repository
                 .findByIdAndActiveTrue(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Producto no encontrado o inactivo: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Product not found or inactive: " + id));
         
-        // 2. SOFT DELETE (INACTIVAR)
         product.setActive(false);
-
-        // 3. UPDATE CAMBIOS
         repository.save(product);
-        log.info("Producto desactivado exitosamente - id: {}", id);
+        
+        log.info("Product deactivated successfully - id: {}", id);
     }
-
 }

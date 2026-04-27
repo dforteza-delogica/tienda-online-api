@@ -41,34 +41,25 @@ public class OrderServiceImpl implements OrderService
     private final CustomerRepository    customerRepository;
     private final AddressRepository     addressRepository;
     private final ProductRepository     productRepository;
-
     private final OrderMapper           orderMapper;
 
     @Override
     @Transactional
     public Order save(OrderRequestDto dto)
     {
-        log.info("Creando pedido para cliente: {}, items: {}", dto.getCustomerId(), dto.getItems().size());
+        log.info("Creating order for customer: {}, items: {}", dto.getCustomerId(), dto.getItems().size());
 
-        // ==== VALIDACIONES ====
-
-        // 1. VALIDAR QUE EL CLIENTE EXISTE
         Customer customer = customerRepository
-                                .findById(dto.getCustomerId())
-                                .orElseThrow(() -> new ResourceNotFoundException("Cliente no encontrado: " + dto.getCustomerId()));
+                .findById(dto.getCustomerId())
+                .orElseThrow(() -> new ResourceNotFoundException("Customer not found: " + dto.getCustomerId()));
 
-        // 2. VALIDAR QUE LA DIRECCION EXISTE
         Address address = addressRepository
-                                .findById(dto.getAddressId())
-                                .orElseThrow(() -> new ResourceNotFoundException("Dirección no encontrada: " + dto.getAddressId()));
+                .findById(dto.getAddressId())
+                .orElseThrow(() -> new ResourceNotFoundException("Address not found: " + dto.getAddressId()));
 
-        // 3. VALIDAR QUE LA DIRECCION PERTENECE AL CLIENTE
         if (!address.getCustomer().getId().equals(customer.getId()))
-            throw new InvalidOperationException("La dirección " + dto.getAddressId() + " no pertenece al cliente " + dto.getCustomerId());
+            throw new InvalidOperationException("Address " + dto.getAddressId() + " does not belong to customer " + dto.getCustomerId());
 
-        // ==== CREACION DE PEDIDO ====
-
-        // 4. CREAR EL PEDIDO BASE
         Order order = new Order();
         order.setCustomer(customer);
         order.setShippingAddress(address);
@@ -76,30 +67,22 @@ public class OrderServiceImpl implements OrderService
         order.setOrderDate(LocalDateTime.now());
         order.setTotal(BigDecimal.ZERO);
         
-        // ==== ORDER ITEMS ====
-
-        // 5. PROCESAR CADA ITEM DEL DTO
         for (OrderItemRequestDto itemDto : dto.getItems())
         {
-            // 5.1 VALIDAR QUE EL PRODUCTO EXISTE
             Product product = productRepository
-                                    .findById(itemDto.getProductId())
-                                    .orElseThrow(() -> new ResourceNotFoundException("Producto no encontrado: " + itemDto.getProductId()));
+                    .findById(itemDto.getProductId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Product not found: " + itemDto.getProductId()));
 
-            // 5.2 VALIDAR QUE EL PRODUCTO ESTA ACTIVO
             if (!product.getActive())
-                throw new InvalidOperationException("El producto no está activo: " + product.getId());
+                throw new InvalidOperationException("Product is not active: " + product.getId());
 
-            // 5.3 VALIDAR STOCK SUFICIENTE
             if (product.getStock() < itemDto.getQuantity()) 
             {
-                log.warn("Stock insuficiente - producto: {}, solicitado: {}, disponible: {}", 
+                log.error("Insufficient stock - product: {}, requested: {}, available: {}", 
                     product.getId(), itemDto.getQuantity(), product.getStock());
-                throw new ConflictException("Stock insuficiente en el producto "+product.getName() +" | Disponible:" + product.getStock());
+                throw new ConflictException("Insufficient stock for product " + product.getName() + " | Available: " + product.getStock());
             }
 
-
-            // 5.4 CREAR EL ORDER ITEM
             OrderItem item = new OrderItem();
             item.setOrder(order);
             item.setProduct(product);
@@ -108,31 +91,24 @@ public class OrderServiceImpl implements OrderService
             BigDecimal unitPrice = product.getPrice();
             item.setUnitPrice(unitPrice);
                                         
-            // 5.5 AÑADIR EL ITEM AL PEDIDO
             order.getItems().add(item);
 
-            // DESCONTAR STOCK
             product.setStock(product.getStock() - itemDto.getQuantity());
 
-            log.debug("Stock descontado - producto: {}, cantidad: {}, stock restante: {}", 
+            log.debug("Stock deducted - product: {}, quantity: {}, remaining stock: {}", 
                 product.getId(), itemDto.getQuantity(), product.getStock());
         }
-
-        // === TOTAL ====
-        // 6. CALCULAR TOTAL DEL PEDIDO
 
         BigDecimal total = BigDecimal.ZERO;
         for (OrderItem i : order.getItems())
         {
-            // NOTA: Quantity ES INTEGER
             BigDecimal lineTotal = i.getUnitPrice().multiply(BigDecimal.valueOf(i.getQuantity()));
             total = total.add(lineTotal);
         }
         order.setTotal(total);
 
-        // 7. PERSISTIR Y DEVOLVER
         Order saved = orderRepository.save(order);
-        log.info("Pedido creado exitosamente - id: {}, total: {}, items: {}", 
+        log.info("Order created successfully - id: {}, total: {}, items: {}", 
             saved.getId(), saved.getTotal(), saved.getItems().size());
         
         return (saved);
@@ -142,55 +118,43 @@ public class OrderServiceImpl implements OrderService
     @Transactional(readOnly = true)
     public Order findById(Long id)
     {
-        log.debug("Buscando pedido por id: {}", id);
-        // 1. BUSCAR O LANZAR EXCEPCION
+        log.debug("Finding order by id: {}", id);
+        
         return (orderRepository
-                    .findById(id)
-                    .orElseThrow(() -> new ResourceNotFoundException("Pedido no encontrado: " + id)));
+                .findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Order not found: " + id)));
     }
 
     @Override
     @Transactional(readOnly = true)
     public Page<OrderResponseDto> findAll(Long customerId, OrderStatus status, Pageable pageable)
     {
-        log.debug("Listando pedidos - cliente: {}, estado: {}, página: {}",
+        log.debug("Listing orders - customer: {}, status: {}, page: {}",
             customerId, status, pageable.getPageNumber());
 
         if (customerId != null && !customerRepository.existsById(customerId))
-            throw new ResourceNotFoundException("Cliente no encontrado: " + customerId);
+            throw new ResourceNotFoundException("Customer not found: " + customerId);
 
-        // 1. OBTENER PAGE CON FILTROS
         Page<Order> page = orderRepository.findByFilters(customerId, status, pageable);
 
-        // 2. CONVERTIR A DTO
         List<OrderResponseDto> dtos = page.getContent()
-                                        .stream()
-                                        .map(order -> orderMapper.toResponseDto(order))
-                                        .toList();
-        return (new PageImpl<>(
-                        dtos,
-                        pageable,
-                        page.getTotalElements())
-        );
+                .stream()
+                .map(orderMapper::toResponseDto)
+                .toList();
+        
+        return (new PageImpl<>(dtos, pageable, page.getTotalElements()));
     }
 
     @Override
     @Transactional
     public Order updateStatus(Long id, OrderStatus newStatus)
     {
-        log.info("Actualizando estado de pedido - id: {}, nuevo estado: {}", id, newStatus);
+        log.info("Updating order status - id: {}, new status: {}", id, newStatus);
 
-        // 1. BUSCAR EL PEDIDO O LANZAR EXCEPCION
         Order order = orderRepository
-                            .findById(id)
-                            .orElseThrow(() -> new ResourceNotFoundException("Pedido no encontrado: " + id));
+                .findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Order not found: " + id));
 
-        // 2. VALIDAR LA TRANSICION DE ESTADO
-        //    Transiciones válidas:
-        //    CREATED -> PAID
-        //    CREATED -> CANCELLED
-        //    PAID    -> SHIPPED
-        //    PAID    -> CANCELLED
         OrderStatus current = order.getStatus();
 
         if (!(
@@ -200,33 +164,26 @@ public class OrderServiceImpl implements OrderService
                 || (current == OrderStatus.PAID    && newStatus == OrderStatus.CANCELLED))
         ) 
         {
-            log.warn("Transición de estado inválida - pedido: {}, estado actual: {}, estado solicitado: {}", 
+            log.error("Invalid status transition - order: {}, current status: {}, requested status: {}", 
                 id, current, newStatus);
-            throw new InvalidOperationException("Transición de estado no permitida: " + current + " -> " + newStatus);
+            throw new InvalidOperationException("Status transition not allowed: " + current + " -> " + newStatus);
         }
-
         
-        // 3. SI SE CANCELA DESHACER EL STOCK
         if (newStatus == OrderStatus.CANCELLED)
         {
-            log.info("Cancelando pedido - restaurando stock de {} items", order.getItems().size());
+            log.info("Cancelling order - restoring stock for {} items", order.getItems().size());
             for (OrderItem item : order.getItems())
             {
-                // PRODUCTO
                 Product product = item.getProduct();
-                // RESTAURAR STOCK
                 product.setStock(product.getStock() + item.getQuantity());
-                // PERSISTIR
                 productRepository.save(product);
             }
         }
 
-        // 3. APLICAR NUEVO ESTADO
         order.setStatus(newStatus);
 
-        // 4. PERSISTIR Y DEVOLVER
         Order updated = orderRepository.save(order);
-        log.info("Estado de pedido actualizado exitosamente - id: {}, estado: {}", updated.getId(), updated.getStatus());
+        log.info("Order status updated successfully - id: {}, status: {}", updated.getId(), updated.getStatus());
         
         return (updated);
     }
